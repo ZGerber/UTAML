@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "physics_data_pipeline"
+version = "1.0.0"
+dependencies = [
+    "awkward>=1.8",
+    "pyarrow>=10.0",
+    "uproot>=5.0",
+    "numpy>=1.21",
+    "colorlog>=6.7",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+hdf5 = ["h5py"]
+
+[project.scripts]
+root2parquet = "rt2npz:main"
+parquet-prep = "prqt2ml:main"
+parquet-split = "readParquet:main"
