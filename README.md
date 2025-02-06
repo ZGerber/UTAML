@@ -120,6 +120,59 @@ Features:
 
 ## Advanced Usage
 
+### Understanding File Formats
+
+#### Parquet
+
+Parquet is a columnar storage file format optimized for use with big data processing frameworks. It offers several advantages:
+
+- **Efficient Compression**: Parquet files are highly compressed, reducing storage requirements and improving I/O performance.
+- **Columnar Storage**: This format allows for efficient reading of specific columns, which is ideal for analytical queries and machine learning workflows.
+- **Schema Evolution**: Parquet supports schema evolution, allowing you to add new columns without breaking existing data.
+- **Interoperability**: Widely supported by modern data processing tools like Apache Spark, Pandas, and Dask.
+
+#### Comparison with Other Formats
+
+- **ROOT**: 
+  - Designed for high-energy physics data, ROOT files are complex and can be difficult for newcomers to use.
+  - ROOT provides powerful data analysis capabilities but requires learning its unique data structures and C++-based language.
+  - Parquet offers a more accessible, Python-friendly alternative for data analysis and machine learning.
+
+- **NPZ**:
+  - NPZ is a simple, compressed archive format for storing NumPy arrays.
+  - It is easy to use with Python but lacks the advanced features of Parquet, such as efficient columnar storage and schema evolution.
+  - NPZ is suitable for smaller datasets and quick prototyping but may not scale well for large datasets.
+
+- **CSV**:
+  - CSV is a plain text format that is easy to read and write.
+  - It is widely supported and can be opened in spreadsheet applications.
+  - However, CSV lacks support for complex data types and is inefficient for large datasets.
+
+- **HDF5**:
+  - HDF5 is a versatile format that supports large, complex datasets and hierarchical data structures.
+  - It is well-suited for scientific data and supports parallel I/O.
+  - HDF5 can be more complex to use and requires additional libraries for full functionality.
+
+#### File Format Comparison Table
+
+| Format | Compression | Columnar | Schema Evolution | Complexity | Best Use Case |
+|--------|-------------|----------|------------------|------------|---------------|
+| Parquet | Yes         | Yes      | Yes              | Moderate   | Large-scale data processing, ML |
+| ROOT   | Yes         | No       | Limited          | High       | High-energy physics analysis |
+| NPZ    | Yes         | No       | No               | Low        | Small datasets, quick prototyping |
+| CSV    | No          | No       | No               | Low        | Simple data exchange, spreadsheets |
+| HDF5   | Yes         | No       | Yes              | High       | Scientific data, hierarchical data |
+
+#### When to Use Each Format
+
+- **Parquet**: Best for large-scale data processing, machine learning, and scenarios where efficient columnar access is needed.
+- **ROOT**: Ideal for traditional high-energy physics analysis where ROOT's specialized tools are required.
+- **NPZ**: Useful for small to medium-sized datasets, quick data sharing, and when working exclusively within Python.
+- **CSV**: Suitable for simple data exchange and when compatibility with spreadsheet software is needed.
+- **HDF5**: Best for complex scientific data and when hierarchical data structures are required.
+
+By converting ROOT files to Parquet, UTAML enables users to leverage modern data science tools and workflows, making cosmic ray data more accessible and easier to analyze.
+
 ### Memory Management
 
 All tools include memory monitoring and protection:
