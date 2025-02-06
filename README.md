@@ -220,8 +220,27 @@ Core dependencies:
 - colorlog (≥6.7)
 - psutil (≥5.9)
 
+- **awkward (≥2.6.10)**: A library for nested, variable-sized data, enabling efficient manipulation of complex data structures.
+- **pyarrow (≥10.0)**: Provides a Python interface to the Apache Arrow project, enabling efficient in-memory columnar data storage and fast data interchange between systems.
+- **uproot (≥5.0)**: A library for reading and writing ROOT files in pure Python, allowing seamless access to high-energy physics data without the need for the ROOT framework.
+- **numpy (≥1.21)**: A fundamental package for scientific computing in Python, providing support for large, multi-dimensional arrays and matrices.
+- **colorlog (≥6.7)**: Enhances Python's logging module with colored output, improving readability of log messages.
+- **psutil (≥5.9)**: Provides an interface for retrieving information on system utilization (CPU, memory, disks, network, sensors) and system uptime.
+
 Optional:
 - h5py (for HDF5 support)
+
+### Key Packages Explained
+
+- **uproot**: 
+  - Uproot is a pure Python package that allows you to read and write ROOT files without needing the ROOT framework. 
+  - It is particularly useful for high-energy physics applications, where ROOT is a standard format for data storage.
+  - Uproot provides a Pythonic interface to access and manipulate ROOT data, making it easier to integrate with modern data science workflows.
+
+- **pyarrow**:
+  - PyArrow is part of the Apache Arrow project, which provides a language-independent columnar memory format for flat and hierarchical data.
+  - It enables efficient data interchange between different systems and is optimized for performance, making it ideal for big data applications.
+  - PyArrow is used in this project to handle Parquet files, allowing for efficient reading and writing of columnar data.
 
 ## Known Issues
 
