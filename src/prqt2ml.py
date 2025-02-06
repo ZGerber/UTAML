@@ -11,25 +11,6 @@ import os
 import sys
 import site
 
-# # Debug information
-# print(f"Python Executable: {sys.executable}")
-# print(f"Python Version: {sys.version}")
-# print(f"PYTHONPATH: {os.environ.get('PYTHONPATH', 'Not set')}")
-# print(f"LD_LIBRARY_PATH: {os.environ.get('LD_LIBRARY_PATH', 'Not set')}")
-# print(f"CONDA_PREFIX: {os.environ.get('CONDA_PREFIX', 'Not set')}")
-# print(f"sys.path: {sys.path}")
-
-# # Ensure conda environment libraries are available
-# conda_prefix = os.environ.get('CONDA_PREFIX')
-# if conda_prefix:
-#     # Add lib path to LD_LIBRARY_PATH
-#     lib_path = os.path.join(conda_prefix, 'lib')
-#     os.environ['LD_LIBRARY_PATH'] = f"{lib_path}:{os.environ.get('LD_LIBRARY_PATH', '')}"
-    
-#     # Add site-packages to Python path
-#     site_packages = os.path.join(conda_prefix, 'lib', 'python3.8', 'site-packages')
-#     if site_packages not in sys.path:
-#         sys.path.insert(0, site_packages)
 
 def setup_logger():
     logger = logging.getLogger(__name__)

@@ -3,10 +3,10 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "physics_data_pipeline"
+name = "utaml"
 version = "1.0.0"
 dependencies = [
-    "awkward>=1.8",
+    "awkward>=2.6.10",
     "pyarrow>=10.0",
     "uproot>=5.0",
     "numpy>=1.21",
