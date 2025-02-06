@@ -1,6 +1,23 @@
-# U-TAML
+# UTAML
 
-A collection of tools for efficient processing and preparation of large datasets. Provides parallel processing capabilities.
+A toolkit for processing and analyzing Telescope Array (TA) cosmic ray physics data, with a focus on machine learning preparation and modern data analysis workflows.
+
+## Author
+
+Created by Zane Gerber ([ZGerber](https://github.com/ZGerber))
+
+This project provides a bridge between legacy ROOT-based data formats and modern data science tools, enabling both ML research and physics analysis. It features:
+
+- Efficient conversion of TA ROOT files to more accessible formats (Parquet/NPZ)
+- Memory-optimized processing of large cosmic ray datasets
+- ML-focused data preparation pipelines
+- Tools for both experienced physicists and newcomers to cosmic ray physics
+
+The toolkit is designed to lower the barrier to entry for TA data analysis by:
+- Eliminating the need to learn complex DST and ROOT data structures
+- Providing pythonic access to cosmic ray data
+- Enabling the use of modern data science libraries (pandas, numpy, scikit-learn, etc.)
+- Supporting both quick exploratory analysis and production ML pipelines
 
 ⚠️ **Note: This project is under active development. Some features may not be fully tested.**
 
@@ -15,10 +32,10 @@ This toolkit provides three main utilities:
 
 ```bash
 # Using pip
-pip install physics_data_pipeline
+pip install utaml
 
 # Optional HDF5 support
-pip install physics_data_pipeline[hdf5]
+pip install utaml[hdf5]
 ```
 
 ## Tools
@@ -29,15 +46,35 @@ Convert ROOT files to Parquet format with parallel processing and memory optimiz
 
 ```bash
 root2parquet input.root --tree_name taTree -o output_dir \
-    --compression ZSTD --row_group_size 10000 -j 4
+    --compression ZSTD --row_group_size 10000 -j 4 \
+    pt eta phi m tau_pt tau_eta  # specify desired columns
 ```
 
 Key features:
 - Parallel processing with configurable workers
 - Memory-efficient chunked processing
+- Selective column reading (recommended to avoid memory issues)
 - Multiple compression options (SNAPPY, GZIP, BROTLI, ZSTD)
 - Progress tracking and resource monitoring
 - Configurable row group sizes
+
+⚠️ **Important:** It's highly recommended to explicitly specify which columns you want to convert. 
+Processing an entire ROOT tree without column selection can lead to:
+- Excessive memory usage
+- Slow processing times
+- Potential issues with complex branch structures
+- Unnecessary data conversion
+
+Example with column selection:
+```bash
+# Good: explicitly specify needed columns
+root2parquet input.root --tree_name taTree \
+    pt eta phi m tau_pt tau_eta \
+    --compression ZSTD -j 4
+
+# Not recommended: converting entire tree
+root2parquet input.root --tree_name taTree  # may cause issues
+```
 
 ### 2. parquet-prep
 
