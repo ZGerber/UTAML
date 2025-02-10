@@ -1,15 +1,14 @@
 import argparse
 import numpy as np
 import awkward as ak
-# import pyarrow.parquet as pq
 import re
 import logging
 import colorlog
 from typing import List
 from pathlib import Path
-import os
-import sys
-import site
+import tempfile
+import shutil
+
 
 
 def setup_logger():
@@ -41,7 +40,6 @@ class ParquetProcessor:
         logger.info(f"Reading input file: {input_file}")
         try:
             self.data = ak.from_parquet(input_file)
-            logger.debug(f"Available fields: {ak.fields(self.data)}")
         except Exception as e:
             logger.error(f"Failed to read parquet file: {str(e)}")
             raise
@@ -61,7 +59,7 @@ class ParquetProcessor:
             except Exception as e:
                 continue
         
-        logger.debug(f"Found {len(jagged_cols)} jagged columns")
+        logger.info(f"Found {len(jagged_cols)} columns")
         return jagged_cols
 
     def filter_data(self, filters: List[str]):
@@ -202,9 +200,18 @@ class ParquetProcessor:
         try:
             self.data = ak.with_field(self.data, getattr(self.data, old_name), new_name)
             self.data = ak.without_field(self.data, old_name)
-            logger.debug(f"Successfully renamed column '{old_name}' to '{new_name}'")
+            logger.info(f"Successfully renamed column '{old_name}' to '{new_name}'")
         except Exception as e:
             logger.error(f"Failed to rename column '{old_name}': {str(e)}")
+
+    def delete_columns(self, columns: List[str]):
+        """Delete specified columns from the data."""
+        logger.info(f"Deleting columns: {columns}")
+        try:
+            self.data = ak.without_field(self.data, columns)
+            logger.info(f"Successfully deleted columns: {columns}")
+        except Exception as e:
+            logger.error(f"Failed to delete columns '{columns}': {str(e)}")
 
     def save(self, output_file: str, format: str = 'parquet'):
         """Save the processed data in the specified format."""
@@ -228,6 +235,35 @@ class ParquetProcessor:
             logger.error(f"Failed to save output file: {str(e)}")
             raise
 
+    def slice_field(self, slice_spec: str):
+        """Slice a field to create a new field."""
+        try:
+            field, index_str, new_field = slice_spec.split(':')
+            index = int(index_str)
+            logger.info(f"Slicing field '{field}' at index {index} to create '{new_field}'")
+            
+            if field not in ak.fields(self.data):
+                logger.error(f"Field '{field}' not found in data")
+                return
+            
+            if new_field in ak.fields(self.data):
+                logger.error(f"New field name '{new_field}' already exists. Choose a different name.")
+                return
+            
+            # Get values at the specified index where possible
+            has_index = ak.num(getattr(self.data, field)) > index
+            indexed_values = ak.mask(
+                ak.firsts(getattr(self.data, field)[:, index:index+1]), 
+                has_index
+            )
+            # Replace None with nan
+            field_values = ak.fill_none(indexed_values, np.nan)
+            
+            self.data = ak.with_field(self.data, field_values, new_field)
+            logger.info(f"Successfully created new field '{new_field}'")
+        except Exception as e:
+            logger.error(f"Failed to slice field '{slice_spec}': {str(e)}")
+
 def main():
     parser = argparse.ArgumentParser(
         description='Process parquet files for ML applications',
@@ -235,49 +271,55 @@ def main():
         epilog="""
 Examples:
     # Basic usage
-    %(prog)s input.parquet -o output.parquet
+    %(prog)s cosmic_data.parquet -o processed_data.parquet
     
     # Apply filters (multiple conditions supported)
-    %(prog)s input.parquet -f "pt>20" "abs(eta)<2.4" "nJets>=2"
+    %(prog)s cosmic_data.parquet -f "energy>1e3" "zenith_angle<45" "num_particles>=10"
     
     # Add new features
-    %(prog)s input.parquet --features "theta:np.sin(theta):sin_theta" "pt:np.log(pt):log_pt"
+    %(prog)s cosmic_data.parquet --features "zenith_angle:np.sin(zenith_angle):sin_zenith" "energy:np.log(energy):log_energy"
     
     # Process jagged arrays to fixed length
-    %(prog)s input.parquet --max-length 10 --pad-value -999
+    %(prog)s cosmic_data.parquet --max-length 10 --pad-value -999
     
     # Scale columns
-    %(prog)s input.parquet --scale "pt:standard" "eta:minmax"
+    %(prog)s cosmic_data.parquet --scale "energy:standard" "zenith_angle:minmax"
     
     # Rename columns
-    %(prog)s input.parquet --rename "oldName:newName" "pt:transverse_momentum"
+    %(prog)s cosmic_data.parquet --rename "oldName:newName" "energy:kinetic_energy"
+    
+    # Delete columns
+    %(prog)s cosmic_data.parquet --delete "unnecessary_column" "another_column"
     
     # Save as npz format
-    %(prog)s input.parquet --format npz
+    %(prog)s cosmic_data.parquet --format npz
+    
+    # Slice fields
+    %(prog)s cosmic_data.parquet --slice "particle_energy:1:second_particle_energy" "arrival_time:0:first_arrival_time"
     """)
     
     parser.add_argument('input_file', 
-                       help='Input parquet file path')
+                       help='Input parquet file path containing cosmic ray data')
     
     parser.add_argument('--output', '-o',
-                       help='Output file path. If not specified, will prepend "processed_" to input filename')
+                       help='Output file path. If not specified, will overwrite the input file')
     
     parser.add_argument('--filters', '-f', nargs='+',
                        help='''Filters to apply to the dataset. Each filter should be a valid Python expression.
 Examples:
-  "pt>20"            - Select events with pt > 20
-  "abs(eta)<2.4"     - Select events with |eta| < 2.4
-  "nJets>=2"         - Select events with 2 or more jets
+  "energy>10"            - Select events with energy > 10 EeV
+  "zenith_angle<45"       - Select events with zenith angle < 45 degrees
+  "num_sds>=10"     - Select events with 10 or more SDs.
 Multiple filters can be specified and will be applied sequentially.''')
     
     parser.add_argument('--features', '-F', nargs='+',
                        help='''Add new features using the format: field:expression:newField
 The expression can use numpy functions (accessed via 'np.')
 Examples:
-  "theta:np.sin(theta):sin_theta"     - Add sine of theta
-  "pt:np.log(pt):log_pt"             - Add natural log of pt
-  "eta:abs(eta):abs_eta"             - Add absolute value of eta
-  "phi:np.cos(phi):cos_phi"          - Add cosine of phi''')
+  "zenith_angle:np.sin(zenith_angle):sin_zenith"     - Add sine of zenith angle
+  "energy:np.log(energy):log_energy"                 - Add natural log of energy
+  "arrival_time:abs(arrival_time):abs_arrival_time"  - Add absolute value of arrival time
+  "azimuth:np.cos(azimuth):cos_azimuth"              - Add cosine of azimuth angle''')
     
     parser.add_argument('--max-length', type=int,
                        help='''Maximum length for jagged arrays. Arrays longer than this will be truncated,
@@ -292,14 +334,14 @@ Available scaling methods:
   standard - Zero mean and unit variance scaling
   minmax   - Scale to range [0,1]
 Examples:
-  "pt:standard"    - Apply standard scaling to pt
-  "eta:minmax"     - Apply min-max scaling to eta''')
+  "energy:standard"    - Apply standard scaling to energy
+  "zenith_angle:minmax" - Apply min-max scaling to zenith angle''')
     
     parser.add_argument('--rename', nargs='+',
                        help='''Rename columns using format: old_name:new_name
 Examples:
-  "pt:transverse_momentum"
-  "eta:pseudorapidity"''')
+  "energy:kinetic_energy"
+  "zenith_angle:zenith"''')
     
     parser.add_argument('--format', choices=['parquet', 'npz'],
                        default='parquet',
@@ -307,16 +349,20 @@ Examples:
   parquet - Save as parquet file (maintains column structure)
   npz     - Save as numpy compressed archive (good for ML frameworks)''')
 
+    parser.add_argument('--slice', '-s', nargs='+',
+                       help='''Slice fields to create new fields using the format: field:index:newField
+Examples:
+  "particle_energy:1:second_particle_energy"     - Create a new field 'second_particle_energy' from the second element of 'particle_energy'
+  "arrival_time:0:first_arrival_time"            - Create a new field 'first_arrival_time' from the first element of 'arrival_time"''')
+
+    parser.add_argument('--delete', nargs='+',
+                       help='''Delete specified columns from the dataset.
+Examples:
+  "unnecessary_column"
+  "another_column"''')
+
     args = parser.parse_args()
 
-    # Modify how output_file is constructed
-    if args.output:
-        output_file = args.output
-    else:
-        # Get the input file name and add "processed_" prefix in the same directory
-        input_path = Path(args.input_file)
-        output_file = input_path.parent / f"processed_{input_path.name}"
-    
     processor = ParquetProcessor(args.input_file)
 
     if args.filters:
@@ -339,7 +385,34 @@ Examples:
             old_name, new_name = rename_spec.split(':')
             processor.rename_column(old_name, new_name)
 
-    processor.save(output_file, args.format)
+    if args.delete:
+        processor.delete_columns(args.delete)
+
+    if args.slice:
+        for slice_spec in args.slice:
+            processor.slice_field(slice_spec)
+
+    # Use a temporary file to ensure safe overwriting
+    if args.output:
+        output_file = args.output
+    else:
+        # Use a temporary file in the same directory as the input file
+        input_path = Path(args.input_file)
+        with tempfile.NamedTemporaryFile(delete=False, dir=input_path.parent, suffix=input_path.suffix) as tmp_file:
+            temp_output_file = tmp_file.name
+        output_file = temp_output_file
+
+    try:
+        processor.save(output_file, args.format)
+        if not args.output:
+            # Overwrite the original file with the temporary file
+            shutil.move(temp_output_file, args.input_file)
+    except Exception as e:
+        logger.error(f"Failed to save the processed data: {str(e)}")
+        if not args.output:
+            # Clean up the temporary file if an error occurred
+            Path(temp_output_file).unlink(missing_ok=True)
+        raise
 
 if __name__ == "__main__":
     main()

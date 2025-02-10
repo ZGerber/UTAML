@@ -21,3 +21,4 @@ hdf5 = ["h5py"]
 root2parquet = "rt2npz:main"
 parquet-prep = "prqt2ml:main"
 parquet-split = "readParquet:main"
+pyparquet = "pyparquet:main"
