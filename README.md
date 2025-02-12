@@ -15,7 +15,7 @@ The toolkit is designed to lower the barrier to entry for TA data analysis by:
 - Enabling the use of modern data science libraries (pandas, numpy, scikit-learn, etc.)
 - Supporting both quick exploratory analysis and production ML pipelines
 
-⚠️ **Note: This project is under active development. Some features may not be fully tested.**
+⚠️ **Note: This project is under active development. Many features may not be fully implemented or tested.**
 
 ## Overview
 
@@ -60,7 +60,7 @@ Key features:
 - Progress tracking and resource monitoring
 - Configurable row group sizes
 
-⚠️ **Important:** It's highly recommended to explicitly specify which columns you want to convert. 
+⚠️ **Important:** If your input data contains custom branches, it's highly recommended to explicitly specify which columns you want to convert.
 Processing an entire ROOT tree without column selection can lead to:
 - Excessive memory usage
 - Slow processing times
