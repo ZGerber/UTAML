@@ -2,6 +2,7 @@ import sys
 import awkward as ak
 import numpy as np
 from pathlib import Path
+import pyarrow.parquet as pq
 
 def main():
     if len(sys.argv) < 2:
@@ -12,7 +13,18 @@ def main():
     variable_name = sys.argv[2] if len(sys.argv) > 2 else "data"
 
     try:
-        data = ak.from_parquet(input_file)
+        # Open the Parquet file
+        parquet_file = pq.ParquetFile(input_file)
+        
+        # Read the file in chunks
+        data_chunks = []
+        for batch in parquet_file.iter_batches():
+            # Convert each batch to an awkward array
+            data_chunk = ak.from_arrow(batch)
+            data_chunks.append(data_chunk)
+        
+        # Concatenate all chunks into a single awkward array
+        data = ak.concatenate(data_chunks)
         print(f"Loaded data from {input_file} into variable '{variable_name}'")
     except Exception as e:
         print(f"Failed to load parquet file: {e}")

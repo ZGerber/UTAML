@@ -8,6 +8,7 @@ from typing import List
 from pathlib import Path
 import tempfile
 import shutil
+from asteval import Interpreter
 
 
 
@@ -62,34 +63,39 @@ class ParquetProcessor:
         logger.info(f"Found {len(jagged_cols)} columns")
         return jagged_cols
 
-    def filter_data(self, filters: List[str]):
-        """Apply filters to the data."""
+    def filter_data(self, filters: List[str], handle_none: str = 'nan') -> ak.Array:
+        """Apply filters to the data and return a filtered copy."""
+        if len(self.data) == 0:
+            logger.warning("Data is empty. No filtering applied.")
+            return self.data
+
         mask = ak.Array(np.ones(len(self.data), dtype=bool))
+        aeval = Interpreter()
+
         for filter_expr in filters:
             logger.info(f"Applying filter: {filter_expr}")
             try:
-                # Check if this is a jagged array index filter (contains colon)
                 if ":" in filter_expr:
-                    # Split into field, index, and condition parts
                     parts = filter_expr.split(":", 1)
                     field = parts[0]
-                    # Extract the index and condition
                     index_str = re.match(r'(\d+)\s*(.*)', parts[1])
                     if not index_str:
                         raise ValueError(f"Invalid jagged array filter format: {filter_expr}")
                     index = int(index_str.group(1))
                     condition = index_str.group(2)
 
-                    # Get values at the specified index where possible
                     has_index = ak.num(getattr(self.data, field)) > index
                     indexed_values = ak.mask(
                         ak.firsts(getattr(self.data, field)[:, index:index+1]), 
                         has_index
                     )
-                    # Replace None with nan
-                    field_values = ak.fill_none(indexed_values, np.nan)
+                    if handle_none == 'nan':
+                        field_values = ak.fill_none(indexed_values, np.nan)
+                    elif handle_none == 'zero':
+                        field_values = ak.fill_none(indexed_values, 0)
+                    else:
+                        field_values = indexed_values
                 else:
-                    # Handle regular filter expressions by extracting field name and condition
                     field_match = re.match(r'([a-zA-Z_][a-zA-Z0-9_]*)(.*)', filter_expr)
                     if not field_match:
                         raise ValueError(f"Invalid filter format: {filter_expr}")
@@ -97,25 +103,24 @@ class ParquetProcessor:
                     condition = field_match.group(2)
                     field_values = getattr(self.data, field)
 
-                # Create safe evaluation environment
                 safe_dict = {
                     'ak': ak,
                     'np': np,
                     'abs': abs,
                     field: field_values
                 }
-                # Evaluate the condition
-                filter_mask = eval(f"{field} {condition}", {"__builtins__": {}}, safe_dict)
-                
+                aeval.symtable.update(safe_dict)
+                filter_mask = aeval(f"{field} {condition}")
                 mask = mask & filter_mask
             except Exception as e:
                 logger.error(f"Failed to apply filter '{filter_expr}': {str(e)}")
                 continue
-                
+
         initial_len = len(self.data)
-        self.data = self.data[mask]
-        final_len = len(self.data)
+        filtered_data = self.data[mask]
+        final_len = len(filtered_data)
         logger.info(f"Filtered {initial_len - final_len} events ({final_len/initial_len:.1%} remaining)")
+        return filtered_data
 
     def add_feature(self, feature_spec: str):
         """Add new features based on existing columns."""
@@ -361,12 +366,18 @@ Examples:
   "unnecessary_column"
   "another_column"''')
 
+    parser.add_argument('--handle-none', choices=['nan', 'zero', 'none'], default='nan',
+                       help='''Specify how to handle None values in jagged arrays (default: nan).
+  nan  - Replace None with NaN
+  zero - Replace None with 0
+  none - Keep None values as is''')
+
     args = parser.parse_args()
 
     processor = ParquetProcessor(args.input_file)
 
     if args.filters:
-        processor.filter_data(args.filters)
+        processor.filter_data(args.filters, handle_none=args.handle_none)
 
     if args.features:
         for feature_spec in args.features:
