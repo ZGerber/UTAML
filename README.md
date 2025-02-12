@@ -71,11 +71,10 @@ Example with column selection:
 ```bash
 # Good: explicitly specify needed columns
 root2parquet input.root --tree_name taTree \
-    pt eta phi m tau_pt tau_eta \
-    --compression ZSTD -j 4
+    energy theta psi --compression ZSTD -j 4
 
 # Not recommended: converting entire tree
-root2parquet input.root --tree_name taTree  # may cause issues
+root2parquet input.root --tree_name taTree  # may cause issues if 'taTree' is too complicated.
 ```
 
 ### 2. parquet-prep
@@ -90,7 +89,7 @@ parquet-prep input.parquet -o output.parquet
 parquet-prep input.parquet \
     -f "pt>20" "abs(eta)<2.4" \
     --features "theta:np.sin(theta):sin_theta" \
-    --scale "pt:standard" "eta:minmax"
+    --scale "theta:standard" "energy:minmax"
 ```
 
 Features:
@@ -201,7 +200,7 @@ parquet-split input.parquet output_dir --num-workers 4
 parquet-prep input.parquet --features \
     "theta:np.sin(theta):sin_theta" \
     "pt:np.log(pt):log_pt" \
-    "eta:abs(eta):abs_eta"
+    "theta:abs(theta):abs_theta"
 ```
 
 ### Jagged Array Processing
