@@ -19,6 +19,6 @@ hdf5 = ["h5py"]
 
 [project.scripts]
 root2parquet = "root2parquet:main"
-parquet-prep = "parquet-prep:main"
-parquet-split = "parquet-split:main"
+parquet-prep = "parquet_prep:main"
+parquet-split = "parquet_split:main"
 pyparquet = "pyparquet:main"
