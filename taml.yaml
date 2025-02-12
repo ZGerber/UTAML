@@ -1,0 +1,182 @@
+# txhybid_config.yaml
+
+#input_file: "/home/zane/taml/dougMC_sib23d_proton_200.root"  # Path to the input ROOT file containing the data.
+input_file: "/mnt/ta_storage_2/dougMC/sib23d_proton.root"  # Path to the input ROOT file containing the data.
+tree_name: "taTree"  # Name of the ROOT TTree to be analyzed.
+output_dir: "/home/zane/taml"  # Directory to save the output results.
+detector_config: "/home/zane/software/taAnalysis/src/config/detectors/tasd_main_config.yaml"  # Path to the detector configuration file.
+library_file: "/home/zane/software/taAnalysis/src/library/taSD_composition.py"  # Path to the analysis file.
+
+# Detector settings.  Do not change this section.
+# It is loaded automatically from the detector_config file.
+detector: null
+
+# The following setting is required for FD/Hybrid only. [0-15]
+profile_fit_index: ~
+
+# New columns to define
+new_columns:
+
+  # MC Variables
+  - name: "Xmax_mc"
+    expression: "trumpmc.ghParm[1]"
+
+  - name: "Energy_mc"
+    expression: "trumpmc.energy"
+
+  # RUSDRAW Variables
+#  - name: "RawPedestal"
+#    expression: "rusdraw.pchped"
+
+  - name: "MIP"
+    expression: "rusdraw.mip"
+    
+  - name: "FADC"
+    expression: "rusdraw.fadc"
+
+  - name: "ClockCount"
+    expression: "rusdraw.clkcnt"
+
+  - name: "RawDetectorXXYY"
+    expression: "rusdraw.xxyy"
+
+  - name: "TraceIntegral"
+    expression: "rusdraw.fadcti"
+
+  - name: "Date"
+    expression: "rusdraw.yymmdd"
+
+  - name: "Time"
+    expression: "rusdraw.hhmmss"
+
+  - name: "Microseconds"
+    expression: "rusdraw.usec"
+
+  # RUFPTN Variables
+  - name: "WaveformIndex"
+    expression: "rufptn.wfindex"
+
+  - name: "NFold"
+    expression: "rufptn.nfold"
+
+  - name: "DetectorXXYY"
+    expression: "rufptn.xxyy"
+
+  - name: "PulseArea"
+    expression: "rufptn.pulsa"
+
+  - name: "VEM"
+    expression: "rufptn.vem"
+
+  - name: "Pedestal"
+    expression: "rufptn.ped"
+
+  - name: "DetectorStatus"
+    expression: "rufptn.isgood"
+
+  - name: "NHits"
+    expression: "rufptn.nhits"
+
+  - name: "NSpaceCluster"
+    expression: "rufptn.nsclust"
+
+  - name: "EarliestLower"
+    expression: "rufptn.tearliest[0]"
+
+  - name: "EarliestUpper"
+    expression: "rufptn.tearliest[1]"
+
+  # RUFLDF Variables
+  - name: "Energy"
+    expression: "rufldf.energy[1]"
+
+  - name: "LogEnergy"
+    expression: "18. + TMath::Log10(rufldf.energy[1] / 1.27)"
+
+
+# Event Selection Criteria
+cuts:
+#  - "LogEnergy >= 18.5"
+
+
+# Histogram parameters
+hist_params:
+#  - name: "hTraceIntegral1"  # Name of the histogram.
+#    title: "Trace Integral Upper"  # Title of the histogram.
+#    style: "histogram"  # Style of the plot (histogram).
+#    column: "FADC"  # Column to be plotted.
+#    bins: 20  # Number of bins in the histogram.
+#    min: 300  # Minimum value of the histogram.
+#    max: 1400  # Maximum value of the histogram.
+#    x_title: "FADC"  # X-axis title.
+#    y_title: "Events"  # Y-axis title.
+#    show_stats: True  # Display statistics box on the plot.
+#    options: ~  # Additional options for the histogram.
+
+
+# Specify the new columns to be defined via the user-defined functions.
+# The callable functions must be defined in the my_analysis file.
+# If <callable> is set to null:
+    # One param given: Not yet defined.
+    # Two params given: The new column is defined by a slice: value1[value2].
+    # Three or more params given: Not yet defined.
+user_functions:
+    - new_column: "FADC0"  # Name of the new column.
+      callable: "extractFADC0"
+      args:
+        - value: "FADC"
+
+    - new_column: "FADC1"  # Name of the new column.
+      callable: "extractFADC1"
+      args:
+        - value: "FADC"
+
+    - new_column: "MIP0"  # Name of the new column.
+      callable: "extractMIP0"
+      args:
+        - value: "MIP"
+
+    - new_column: "MIP1"  # Name of the new column.
+      callable: "extractMIP1"
+      args:
+        - value: "MIP"
+
+    - new_column: "TraceIntegral0"
+      callable: "extractIntegral0"
+      args:
+        - value: "TraceIntegral"
+
+    - new_column: "TraceIntegral1"
+      callable: "extractIntegral1"
+      args:
+        - value: "TraceIntegral"
+
+    - new_column: "VEM0"
+      callable: "extractVEM0"
+      args:
+        - value: "VEM"
+
+    - new_column: "VEM1"
+      callable: "extractVEM1"
+      args:
+        - value: "VEM"
+
+    - new_column: "Pedestal0"
+      callable: "extractPedestal0"
+      args:
+        - value: "Pedestal"
+
+    - new_column: "Pedestal1"
+      callable: "extractPedestal1"
+      args:
+        - value: "Pedestal"
+
+    - new_column: "PulseArea0"
+      callable: "extractPulseArea0"
+      args:
+        - value: "Pedestal"
+
+    - new_column: "PulseArea1"
+      callable: "extractPulseArea1"
+      args:
+        - value: "PulseArea"
