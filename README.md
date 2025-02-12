@@ -2,10 +2,6 @@
 
 A toolkit for processing and analyzing Telescope Array (TA) cosmic ray physics data, with a focus on machine learning preparation and modern data analysis workflows.
 
-## Author
-
-Created by Zane Gerber ([ZGerber](https://github.com/ZGerber))
-
 This project provides a bridge between legacy ROOT-based data formats and modern data science tools, enabling both ML research and physics analysis. It features:
 
 - Efficient conversion of TA ROOT files to more accessible formats (Parquet/NPZ)
@@ -30,9 +26,15 @@ This toolkit provides three main utilities:
 
 ## Installation
 
+Clone the repository:
+```bash
+git clone https://github.com/ZGerber/UTAML.git
+cd UTAML
+```
+
 ```bash
 # Using pip
-pip install utaml
+pip install .
 
 # Optional HDF5 support
 pip install utaml[hdf5]
@@ -248,6 +250,11 @@ Optional:
 - Some scaling operations may not handle NaN values gracefully
 - Parallel processing can occasionally lead to deadlocks with very large datasets
 - Not all combinations of options have been thoroughly tested
+
+
+## Author
+
+Created by Zane Gerber ([ZGerber](https://github.com/ZGerber))
 
 ## Contributing
 
