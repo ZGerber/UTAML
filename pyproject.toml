@@ -18,7 +18,7 @@ dependencies = [
 hdf5 = ["h5py"]
 
 [project.scripts]
-root2parquet = "rt2npz:main"
-parquet-prep = "prqt2ml:main"
-parquet-split = "readParquet:main"
+root2parquet = "root2parquet:main"
+parquet-prep = "parquet-prep:main"
+parquet-split = "parquet-split:main"
 pyparquet = "pyparquet:main"
