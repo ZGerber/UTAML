@@ -103,6 +103,10 @@ class ParquetProcessor:
                     condition = field_match.group(2)
                     field_values = getattr(self.data, field)
 
+                # Debug: Log the field values and condition
+                logger.debug(f"Field values for '{field}': {field_values}")
+                logger.debug(f"Condition: {condition}")
+
                 safe_dict = {
                     'ak': ak,
                     'np': np,
@@ -120,7 +124,10 @@ class ParquetProcessor:
         filtered_data = self.data[mask]
         final_len = len(filtered_data)
         logger.info(f"Filtered {initial_len - final_len} events ({final_len/initial_len:.1%} remaining)")
-        return filtered_data
+
+        # Ensure the filtered data is used
+        self.data = filtered_data
+        return self.data
 
     def add_feature(self, feature_spec: str):
         """Add new features based on existing columns."""
