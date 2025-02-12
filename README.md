@@ -17,6 +17,10 @@ The toolkit is designed to lower the barrier to entry for TA data analysis by:
 
 ⚠️ **Note: This project is under active development. Many features may not be fully implemented or tested.**
 
+### Current status
+The software works very well for simple ROOT trees, like those obtained from SD analysis (e.g. tTlfit).
+Processing more complicated ROOT trees (e.g. taTree) requires preprocessing with the taAnalysis software to handle the custom branches.
+
 ## Overview
 
 This toolkit provides three main utilities:
@@ -49,7 +53,7 @@ Convert ROOT files to Parquet format with parallel processing and memory optimiz
 ```bash
 root2parquet input.root --tree_name taTree -o output_dir \
     --compression ZSTD --row_group_size 10000 -j 4 \
-    pt eta phi m tau_pt tau_eta  # specify desired columns
+    energy theta psi prfc rusdraw  # specify desired columns
 ```
 
 Key features:
